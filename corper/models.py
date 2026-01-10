@@ -1,0 +1,11 @@
+from django.db import models
+from django.conf import settings
+
+class CorperProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=15)
+    state_code = models.CharField(max_length=20)
+    call_up_number = models.CharField(max_length=30, unique=True)
+    deployment_state = models.CharField(max_length=100)
+    camp_location = models.CharField(max_length=150)
+    deployment_date = models.DateField()
