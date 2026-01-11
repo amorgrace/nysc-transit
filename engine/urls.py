@@ -25,7 +25,7 @@ def testnet(request):
     })
 
 urlpatterns = [
-    path('/', testnet),
+    path('', testnet),
     path('admin/', admin.site.urls),
     path("api/", app.urls),
     
