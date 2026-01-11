@@ -17,9 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from engine.app import app
+from django.http import JsonResponse
 
+def testnet(request):
+    return JsonResponse({
+        "message": "Welcome to NYSC PROCUREMENT API BASE"
+    })
 
 urlpatterns = [
+    path('/', testnet),
     path('admin/', admin.site.urls),
     path("api/", app.urls),
     
