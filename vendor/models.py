@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 import uuid
 class VendorProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vendor_profile')
     phone = models.CharField(max_length=15)
     business_name = models.CharField(max_length=150)
     business_registration_number = models.CharField(max_length=100, unique=True)
@@ -80,6 +80,11 @@ class Trip(models.Model):
         related_name='trips'
     )
 
+    trip_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,         
+        db_index=True,     
+    )
     origin = models.CharField(max_length=150, help_text="Starting point e.g. Iyana-Ipaja")
     destination = models.CharField(max_length=150, help_text="Destination e.g. NYSC Camp, Iyana-Ipaja")
     departure_date = models.DateField()

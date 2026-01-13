@@ -1,8 +1,11 @@
 # permissions.py
 from ninja.errors import HttpError
+from functools import wraps
+
 
 
 def corper_required(func):
+    @wraps(func)                           # ← this line is the key
     def wrapper(request, *args, **kwargs):
         if not hasattr(request, 'user') or not request.user.is_authenticated:
             raise HttpError(401, "Authentication required")
@@ -12,14 +15,11 @@ def corper_required(func):
             
         return func(request, *args, **kwargs)
     
-    # Preserve function metadata (good practice)
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
-    
     return wrapper
 
 
 def vendor_required(func):
+    @wraps(func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             raise HttpError(401, "Authentication required")
@@ -29,6 +29,4 @@ def vendor_required(func):
             
         return func(request, *args, **kwargs)
     
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
     return wrapper

@@ -9,14 +9,30 @@ from .schemas import CorperProfileOut, CorperProfileIn
 router = Router(tags=["Corper Profile"], auth=JWTAuth())
 
 
-@router.get("/profile", response=CorperProfileOut)
+@router.get("/profile", response=dict)  # or create a proper combined schema later
 @corper_required
 def get_corper_profile(request):
     try:
         profile = request.user.corper_profile
-        return profile
+        
+        return {
+            # User details
+            "email": request.user.email,
+            "full_name": request.user.full_name,
+            "role": request.user.role,
+            "user_phone": request.user.phone,          # from User model (if exists)
+            
+            # CorperProfile details
+            "corper_phone": profile.phone,
+            "state_code": profile.state_code,
+            "call_up_number": profile.call_up_number,
+            "deployment_state": profile.deployment_state,
+            "camp_location": profile.camp_location,
+            "deployment_date": profile.deployment_date.isoformat(),
+        }
+    
     except CorperProfile.DoesNotExist:
-        raise HttpError(404, "Profile not found")
+        raise HttpError(404, "Corper profile not found")
 
 
 @router.patch("/profile", response=CorperProfileOut)

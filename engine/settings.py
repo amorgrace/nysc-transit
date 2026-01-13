@@ -49,7 +49,8 @@ INSTALLED_APPS = [
 
 
 SIMPLE_JWT = {
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # or whatever you use
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "ROTATE_REFRESH_TOKENS": True,              
     "BLACKLIST_AFTER_ROTATION": True,
     "TOKEN_BLACKLIST": "ninja_jwt.token_blacklist.models.BlacklistedToken",  # default

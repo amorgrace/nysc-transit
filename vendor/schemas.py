@@ -1,46 +1,60 @@
 from ninja import Schema
 from datetime import datetime
 from typing import List, Optional
-
+from uuid import UUID   
+from datetime import date, time
+from decimal import Decimal
 class VehicleIn(Schema):
-    make: str
-    model: str
-    year: int
-    license_plate: str
-    capacity: int
+    registration_number: str
+    vehicle_type: str               # must be one of: 'bus', 'minibus', 'van', 'car'
+    make_model: str
     color: Optional[str] = None
+    capacity: int
+    year_of_manufacture: Optional[int] = None
+    is_insured: Optional[bool] = False
+    insurance_expiry: Optional[date] = None
 
 
 class VehicleOut(Schema):
-    id: int
-    make: str
-    model: str
-    year: int
-    license_plate: str
-    capacity: int
+    id: UUID
+    registration_number: str
+    vehicle_type: str
+    make_model: str
     color: Optional[str]
+    capacity: int
+    year_of_manufacture: Optional[int]
+    status: str
+    is_insured: bool
+    insurance_expiry: Optional[date]
 
 
 class TripIn(Schema):
-    vehicle_id: int
+    vehicle_id: UUID
     origin: str
     destination: str
-    departure_time: datetime
-    arrival_time: datetime
-    price_per_seat: float
+    departure_date: date
+    departure_time: time
+    estimated_arrival_time: Optional[time] = None
+    price_per_seat: Decimal
     available_seats: int
+    description: Optional[str] = None
 
 
 class TripOut(Schema):
-    id: int
-    vehicle_id: int
+    id: int   
+    trip_id: UUID                
+    vehicle_id: UUID
     origin: str
     destination: str
-    departure_time: datetime
-    arrival_time: datetime
-    price_per_seat: float
+    departure_date: date
+    departure_time: time
+    estimated_arrival_time: Optional[time] = None
+    price_per_seat: Decimal
     available_seats: int
     status: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class VendorProfileOut(Schema):
