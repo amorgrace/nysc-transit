@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+import uuid
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -28,7 +29,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
         CORPER = "corper", "Corper"
         VENDOR = "vendor", "Vendor"
-
+    
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=150, default='')
     role = models.CharField(max_length=10, choices=Role.choices)

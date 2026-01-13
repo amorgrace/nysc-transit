@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from engine.app import app
+from .api import api
 from django.http import JsonResponse
 
 def testnet(request):
@@ -27,6 +27,6 @@ def testnet(request):
 urlpatterns = [
     path('', testnet),
     path('admin/', admin.site.urls),
-    path("api/", app.urls),
+    path("api/", api.urls),
     
 ]

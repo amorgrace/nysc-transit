@@ -43,10 +43,11 @@ INSTALLED_APPS = [
     "authenticator", 
     "vendor",
     "corper",
+    'bookings',
     'ninja_jwt.token_blacklist',
 ]
 
-# settings.py
+
 SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # or whatever you use
     "ROTATE_REFRESH_TOKENS": True,              

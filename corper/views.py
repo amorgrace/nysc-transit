@@ -1,14 +1,41 @@
-from django.shortcuts import render
-
 from ninja import Router
+from ninja.errors import HttpError
 from ninja_jwt.authentication import JWTAuth
+
 from authenticator.permissions import corper_required
+from .models import CorperProfile
+from .schemas import CorperProfileOut, CorperProfileIn
+
+router = Router(tags=["Corper Profile"], auth=JWTAuth())
 
 
-router = Router(auth=JWTAuth())
-# from ninja.security import PermissionBase
+@router.get("/profile", response=CorperProfileOut)
+@corper_required
+def get_corper_profile(request):
+    try:
+        profile = request.user.corper_profile
+        return profile
+    except CorperProfile.DoesNotExist:
+        raise HttpError(404, "Profile not found")
 
-@router.get("/dashboard")
-@corper_required 
-def corper_dashboard(request):
-    return {"message": "Welcome Corper"}
+
+@router.patch("/profile", response=CorperProfileOut)
+@corper_required
+def update_corper_profile(request, payload: CorperProfileIn):
+    try:
+        profile = request.user.corper_profile
+    except CorperProfile.DoesNotExist:
+        raise HttpError(404, "Profile not found")
+
+    # Update only provided fields
+    update_data = payload.dict(exclude_unset=True)
+    
+    # Optional: add validation for fields that shouldn't change after creation
+    if "state_code" in update_data or "call_up_number" in update_data:
+        raise HttpError(400, "State code and call-up number cannot be changed")
+
+    for attr, value in update_data.items():
+        setattr(profile, attr, value)
+
+    profile.save()
+    return profile
