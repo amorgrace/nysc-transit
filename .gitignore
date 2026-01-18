@@ -1,18 +1,48 @@
-# Environment variables
-.env
-.env.*
+# =========================
+# Python Bytecode
+# =========================
+# Ignore all __pycache__ folders
+**/__pycache__/
+*.py[cod]
 
-# Virtual environments
+# =========================
+# Virtual Environments
+# =========================
 venv/
 .venv/
 venv*/
 ENV/
 env/
 
-# Python cache
-__pycache__/
-**/__pycache__/
-*.py[cod]
+# =========================
+# Environment Files
+# =========================
+.env
+.env.*
 
+# =========================
 # Ruff cache
+# =========================
 .ruff_cache/
+
+# =========================
+# MyPy cache
+# =========================
+.mypy_cache/
+
+# =========================
+# pytest cache
+# =========================
+.pytest_cache/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Editor & OS files (optional but useful)
+# =========================
+.vscode/
+.idea/
+.DS_Store
