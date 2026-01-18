@@ -19,5 +19,6 @@ Describe the tests you ran to verify your changes.
 - [ ] I have performed a self-review
 - [ ] I have added tests that prove my fix is effective
 - [ ] I have updated documentation where necessary
+- [ ] All existing and new tests pass (`pytest` or equivalent)
 
 ## Screenshots (if applicable)
