@@ -14,19 +14,20 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
-from .api import api
 from django.http import JsonResponse
+from django.urls import path
+
+from .api import api
+
 
 def testnet(request):
-    return JsonResponse({
-        "message": "Welcome to NYSC PROCUREMENT API BASE"
-    })
+    return JsonResponse({"message": "Welcome to NYSC PROCUREMENT API BASE"})
+
 
 urlpatterns = [
-    path('', testnet),
-    path('admin/', admin.site.urls),
+    path("", testnet),
+    path("admin/", admin.site.urls),
     path("api/", api.urls),
-    
 ]
