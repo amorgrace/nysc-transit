@@ -45,7 +45,7 @@ def register_corper(request, data: CorperSignupSchema):
             full_name=data.full_name,
             role=User.Role.CORPER,
             is_active=True,
-            phone=data.phone
+            phone=data.phone,
         )
 
         # 4. Create the CorperProfile immediately (matches your exact model)
