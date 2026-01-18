@@ -284,7 +284,9 @@ Suggested local development workflow:
 
 ## License
 
-No license file is present in this repository. If you want the project to be open-source, add a `LICENSE` (for example, MIT) at the repository root and mention it here.
+This repository is currently closed-source and provided under an All Rights Reserved notice — see the `LICENSE` file in the repository root for details.
+
+If you need access or a specific licensing arrangement for this codebase, please contact the repository owner or open an issue to request access.
 
 ## Contact / Questions
 
@@ -294,3 +296,31 @@ If you need help running or extending the project, open an issue or reach out to
 
 Happy hacking — this README is meant to get developers started quickly. If you'd like, I can add a `CONTRIBUTING.md`, a `.env.example`, or automated test runners (GitHub Actions) next.
 
+## Updating requirements
+
+When you add or remove Python packages while developing, update the pinned dependencies in `requirements.txt` from within your activated virtual environment:
+
+```bash
+# Activate your virtualenv first (example using the project's `.venv`):
+source .venv/bin/activate
+
+# Freeze currently installed packages to requirements.txt (overwrites file)
+pip freeze > requirements.txt
+```
+
+Note: This will overwrite `requirements.txt`. If you maintain multiple requirement files (e.g., `requirements-dev.txt`), update the appropriate file instead.
+
+## Pre-commit
+
+To enable repository-level git hooks (recommended), run the following from the project root:
+
+```bash
+pre-commit install
+pre-commit run --all-files
+```
+
+If you don't have the `pre-commit` tool installed locally, install it first:
+
+```bash
+pip install pre-commit
+```

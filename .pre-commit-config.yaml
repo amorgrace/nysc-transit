@@ -1,0 +1,66 @@
+repos:
+  # -------------------------
+  # Black for code formatting
+  # -------------------------
+  - repo: https://github.com/psf/black
+    rev: 26.1.0
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  # -------------------------
+  # Ruff: auto-fix lint issues
+  # -------------------------
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.14.13 
+    hooks:
+      - id: ruff-check
+        name: Ruff check + fix
+        entry: ruff
+        language: python
+        types: [python]
+        args: ["check", ".", "--fix"]
+
+
+      - id: ruff
+        name: Ruff format
+        entry: ruff
+        language: python
+        types: [python]
+        args: ["format", "."]  # full formatting like `ruff format .`
+
+  # -------------------------
+  # isort: sort imports
+  # -------------------------
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  # -------------------------
+  # Generic pre-commit hooks
+  # -------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # -------------------------
+  # Pytest hook (local)
+  # -------------------------
+  - repo: local
+    hooks:
+      - id: pytest
+        name: Run pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        args: [
+          "--maxfail=1", 
+          "--disable-warnings",
+          "--ds=engine.settings",
+          "modules"  # run tests in your apps folder
+        ]
