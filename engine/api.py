@@ -1,9 +1,9 @@
 from ninja import NinjaAPI
-from corper.views import router as corper_router
-from vendor.views import router as vendor_router
-from authenticator.views import router as auth_router
-from bookings.views import router as booking_router
 
+from modules.authenticator.views import router as auth_router
+from modules.bookings.views import router as booking_router
+from modules.corper.views import router as corper_router
+from modules.vendor.views import router as vendor_router
 
 api = NinjaAPI()
 

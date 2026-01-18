@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ master ]
+
+  push: {}
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: 3.12.0
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # Install dev tools used in CI
+          pip install ruff black
+
+      - name: Ruff lint check
+        run: |
+          # Fail the job if ruff reports issues
+          ruff check .
+
+      - name: Run Django tests per module (if tests present)
+        env:
+
+          DJANGO_SETTINGS_MODULE: engine.settings
+          PYTHONUNBUFFERED: 1
+        run: |
+          set -e
+          # Use the Django test runner. If there are module-level tests, run them per-module to make failures easier to track.
+          if [ -d modules ]; then
+            for module in $(ls modules); do
+              # Only run tests if the module has a tests.py or a tests/ directory
+              if [ -f "modules/$module/tests.py" ] || [ -d "modules/$module/tests" ]; then
+                echo "Running tests for module: $module"
+                python manage.py test "modules.$module" || exit 1
+              else
+                echo "No tests found for module: $module — skipping"
+              fi
+            done
+          else
+            echo "No modules/ directory found — running full test suite"
+            python manage.py test
+          fi
