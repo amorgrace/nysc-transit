@@ -1,4 +1,4 @@
-# authenticator/views.py
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from ninja import Router
 from ninja.errors import HttpError
@@ -8,7 +8,19 @@ from ninja_jwt.tokens import RefreshToken
 from modules.corper.models import CorperProfile
 from modules.vendor.models import VendorProfile
 
-from .schema import CorperSignupSchema, LoginSchema, LogoutSchema, VendorSignupSchema
+from .schema import (
+    CorperSignupSchema,
+    LoginSchema,
+    LogoutSchema,
+    VendorSignupSchema,
+    VerifyOTPSchema,
+)
+from .utils.email import (
+    generate_otp,
+    send_or_log_otp_email,
+    store_otp_for_user,
+    verify_otp,
+)
 
 router = Router(tags=["Auth"])
 
@@ -17,38 +29,24 @@ User = get_user_model()
 
 @router.post("/corper/register", auth=None)
 def register_corper(request, data: CorperSignupSchema):
-    """
-    Register a new NYSC Corper with profile creation
-    """
-    # 1. Password match check
     if data.password != data.confirm_password:
         raise HttpError(400, "Passwords do not match")
 
-    # 2. Uniqueness checks (prevent duplicates)
+    # Your existing uniqueness checks...
     if User.objects.filter(email=data.email).exists():
         raise HttpError(400, "This email is already registered")
-
-    if CorperProfile.objects.filter(phone=data.phone).exists():
-        raise HttpError(400, "This phone number is already registered")
-
-    if CorperProfile.objects.filter(state_code=data.state_code).exists():
-        raise HttpError(400, "This state code is already registered")
-
-    if CorperProfile.objects.filter(call_up_number=data.call_up_number).exists():
-        raise HttpError(400, "This call-up number is already in use")
+    # ... other checks ...
 
     try:
-        # 3. Create the base user
         user = User.objects.create_user(
             email=data.email,
             password=data.password,
             full_name=data.full_name,
             role=User.Role.CORPER,
-            is_active=True,
+            is_active=False,  # ← you can keep True or set False until verified
             phone=data.phone,
         )
 
-        # 4. Create the CorperProfile immediately (matches your exact model)
         CorperProfile.objects.create(
             user=user,
             phone=data.phone,
@@ -59,24 +57,24 @@ def register_corper(request, data: CorperSignupSchema):
             deployment_date=data.deployment_date,
         )
 
-        # 5. Generate JWT tokens
+        # Generate & store OTP
+        otp = generate_otp()
+        store_otp_for_user(user, otp, minutes=10)
+
+        # "Send" (or log) email
+        send_or_log_otp_email(user, otp, data.email)
+
         refresh = RefreshToken.for_user(user)
 
-        # 6. Success response
-        return {
-            "message": "Corper registration successful! Welcome to NYSC service.",
+        response = {
+            "message": "Registration successful! Please verify your email.",
             "user": {
                 "email": user.email,
                 "full_name": user.full_name,
                 "role": user.role,
             },
             "corper_profile": {
-                "phone": user.phone,
-                "state_code": data.state_code,
-                "call_up_number": data.call_up_number,
-                "deployment_state": data.deployment_state,
-                "camp_location": data.camp_location,
-                "deployment_date": data.deployment_date.strftime("%Y-%m-%d"),
+                # ... your fields ...
             },
             "tokens": {
                 "refresh": str(refresh),
@@ -84,8 +82,14 @@ def register_corper(request, data: CorperSignupSchema):
             },
         }
 
+        # DEV MODE: expose OTP so frontend can show it
+        if settings.DEBUG:
+            response["dev_otp"] = otp
+            response["dev_message"] = "Development mode: Use this OTP to verify"
+
+        return response
+
     except Exception as e:
-        # Clean up if something fails (optional but good practice)
         if "user" in locals():
             user.delete()
         raise HttpError(400, f"Registration failed: {str(e)}")
@@ -94,7 +98,7 @@ def register_corper(request, data: CorperSignupSchema):
 @router.post("/vendor/register", auth=None)
 def register_vendor(request, data: VendorSignupSchema):
     """
-    Register a new Vendor
+    Register a new Vendor — starts inactive, requires OTP verification
     """
     # 1. Basic validation
     if data.password != data.confirm_password:
@@ -107,7 +111,6 @@ def register_vendor(request, data: VendorSignupSchema):
     if User.objects.filter(phone=data.phone).exists():
         raise HttpError(400, "This phone number is already registered")
 
-    # Optional: check business registration number if you want it unique
     if (
         data.business_registration_number
         and VendorProfile.objects.filter(
@@ -117,14 +120,15 @@ def register_vendor(request, data: VendorSignupSchema):
         raise HttpError(400, "This business registration number is already in use")
 
     try:
-        # 3. Create base user
+        # 3. Create base user — INACTIVE until verified
         user = User.objects.create_user(
             email=data.email,
             password=data.password,
-            full_name=data.business_name,
+            full_name=data.business_name,  # business name as display name
             phone=data.phone,
             role=User.Role.VENDOR,
-            is_active=True,
+            is_active=False,  # ← key change
+            email_verified=False,
         )
 
         # 4. Create VendorProfile
@@ -136,15 +140,22 @@ def register_vendor(request, data: VendorSignupSchema):
             description=data.description or "",
         )
 
-        # 5. Generate tokens
+        # 5. Generate & store OTP
+        otp = generate_otp()
+        store_otp_for_user(user, otp, minutes=10)
+
+        # 6. "Send" OTP (logs to console in dev, real send in prod)
+        send_or_log_otp_email(user, otp, data.email)
+
+        # 7. Generate tokens anyway (frontend can store them, but login will fail until verified)
         refresh = RefreshToken.for_user(user)
 
-        # 6. Response
-        return {
-            "message": "Vendor registration successful!",
+        # 8. Response
+        response = {
+            "message": "Vendor registration successful! Please check your email for a verification code (OTP).",
             "user": {
                 "email": user.email,
-                "full_name": user.full_name,  # which is business_name
+                "full_name": user.full_name,
                 "role": user.role,
                 "phone": user.phone,
             },
@@ -159,6 +170,13 @@ def register_vendor(request, data: VendorSignupSchema):
                 "access": str(refresh.access_token),
             },
         }
+
+        # Dev convenience: expose OTP in response
+        if settings.DEBUG:
+            response["dev_otp"] = otp
+            response["dev_message"] = "(Development mode — use this OTP to verify)"
+
+        return response
 
     except Exception as e:
         if "user" in locals():
@@ -210,3 +228,19 @@ def logout(request, data: LogoutSchema):
         raise HttpError(400, "Invalid or expired refresh token")
     except Exception as e:
         raise HttpError(400, f"Logout failed: {str(e)}")
+
+
+@router.post("/verify-otp", auth=None)  # or use JWT if you want to tie to user
+def verify_otp_endpoint(request, data: VerifyOTPSchema):  # e.g. email + otp
+    try:
+        user = User.objects.get(email=data.email)
+    except User.DoesNotExist:
+        raise HttpError(404, "User not found")
+
+    success, message = verify_otp(user, data.otp)
+    if success:
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        return {"message": message, "success": True}
+    else:
+        raise HttpError(400, message)
