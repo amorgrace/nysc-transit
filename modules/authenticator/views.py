@@ -192,7 +192,7 @@ def register_vendor(request, data: VendorSignupSchema):
         return response
 
     except Exception as e:
-        if user in locals():
+        if user is not None:
             user.delete()
         raise HttpError(400, f"Registration failed: {str(e)}")
 
