@@ -16,8 +16,6 @@ django-cors-headers==4.9.0
 django-ninja==1.5.1
 django-ninja-extra==0.30.8
 django-ninja-jwt==5.4.2
-djangorestframework==3.16.1
-djangorestframework_simplejwt==5.5.1
 dnspython==2.8.0
 email-validator==2.3.0
 filelock==3.20.3
