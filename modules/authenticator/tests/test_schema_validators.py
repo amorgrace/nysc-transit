@@ -1,7 +1,7 @@
 from datetime import date
 
 import pytest
-from authenticator.schema import CorperSignupSchema, VendorSignupSchema
+from modules.authenticator.schema import CorperSignupSchema, VendorSignupSchema
 from pydantic import ValidationError
 
 
