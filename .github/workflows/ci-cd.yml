@@ -61,3 +61,4 @@ jobs:
           else
             echo "No modules/ directory found — running full test suite"
             python manage.py test
+          fi
