@@ -1,4 +1,4 @@
-﻿annotated-types==0.7.0
+annotated-types==0.7.0
 asgiref==3.11.0
 black==26.1.0
 certifi==2026.1.4
@@ -16,6 +16,8 @@ django-cors-headers==4.9.0
 django-ninja==1.5.1
 django-ninja-extra==0.30.8
 django-ninja-jwt==5.4.2
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
 dnspython==2.8.0
 email-validator==2.3.0
 filelock==3.20.3

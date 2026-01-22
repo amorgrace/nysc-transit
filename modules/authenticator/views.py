@@ -1,3 +1,5 @@
+from typing import cast
+
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from ninja import Router
@@ -5,6 +7,7 @@ from ninja.errors import HttpError
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
+from modules.authenticator.models import User as CustomUser
 from modules.corper.models import CorperProfile
 from modules.vendor.models import VendorProfile
 
@@ -37,14 +40,19 @@ def register_corper(request, data: CorperSignupSchema):
         raise HttpError(400, "This email is already registered")
     # ... other checks ...
 
+    user = None
     try:
-        user = User.objects.create_user(
-            email=data.email,
-            password=data.password,
-            full_name=data.full_name,
-            role=User.Role.CORPER,
-            is_active=False,  # ← you can keep True or set False until verified
-            phone=data.phone,
+        user = cast(
+            CustomUser,
+            User.objects.create_user(
+                email=data.email,
+                password=data.password,
+                full_name=data.full_name,
+                role=User.Role.CORPER,  # type: ignore
+                is_active=False,  # ← you can keep True or set False until verified
+                phone=data.phone,
+                username=data.username or data.email,
+            ),
         )
 
         CorperProfile.objects.create(
@@ -78,7 +86,7 @@ def register_corper(request, data: CorperSignupSchema):
             },
             "tokens": {
                 "refresh": str(refresh),
-                "access": str(refresh.access_token),
+                "access": str(refresh.access_token),  # type: ignore
             },
         }
 
@@ -90,7 +98,7 @@ def register_corper(request, data: CorperSignupSchema):
         return response
 
     except Exception as e:
-        if "user" in locals():
+        if user in locals():
             user.delete()
         raise HttpError(400, f"Registration failed: {str(e)}")
 
@@ -119,16 +127,21 @@ def register_vendor(request, data: VendorSignupSchema):
     ):
         raise HttpError(400, "This business registration number is already in use")
 
+    user = None
     try:
         # 3. Create base user — INACTIVE until verified
-        user = User.objects.create_user(
-            email=data.email,
-            password=data.password,
-            full_name=data.business_name,  # business name as display name
-            phone=data.phone,
-            role=User.Role.VENDOR,
-            is_active=False,  # ← key change
-            email_verified=False,
+        user = cast(
+            CustomUser,
+            User.objects.create_user(
+                email=data.email,
+                password=data.password,
+                full_name=data.business_name,  # business name as display name
+                phone=data.phone,
+                role=User.Role.VENDOR,  # type: ignore
+                is_active=False,  # ← key change
+                email_verified=False,
+                username=data.username or data.email,
+            ),
         )
 
         # 4. Create VendorProfile
@@ -167,7 +180,7 @@ def register_vendor(request, data: VendorSignupSchema):
             },
             "tokens": {
                 "refresh": str(refresh),
-                "access": str(refresh.access_token),
+                "access": str(refresh.access_token),  # type: ignore
             },
         }
 
@@ -179,7 +192,7 @@ def register_vendor(request, data: VendorSignupSchema):
         return response
 
     except Exception as e:
-        if "user" in locals():
+        if user in locals():
             user.delete()
         raise HttpError(400, f"Registration failed: {str(e)}")
 
@@ -194,6 +207,8 @@ def login(request, data: LoginSchema):
     if user is None:
         raise HttpError(401, "Invalid email or password")
 
+    user = cast(CustomUser, user)
+
     if not user.is_active:
         raise HttpError(403, "Account is inactive. Please contact support.")
 
@@ -207,7 +222,7 @@ def login(request, data: LoginSchema):
         },
         "tokens": {
             "refresh": str(refresh),
-            "access": str(refresh.access_token),
+            "access": str(refresh.access_token),  # type: ignore
         },
     }
 
@@ -219,7 +234,7 @@ def logout(request, data: LogoutSchema):
     """
     try:
         # Validate and blacklist the refresh token
-        refresh_token = RefreshToken(data.refresh)
+        refresh_token = RefreshToken(data.refresh)  # type: ignore
         refresh_token.blacklist()  # This marks it as unusable
 
         return {"message": "Logged out successfully"}

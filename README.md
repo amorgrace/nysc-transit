@@ -112,6 +112,7 @@ DATABASE_URL=sqlite:///db.sqlite3
 5. Run migrations and create a superuser
 
 ```bash
+python3 manage.py makemigrations
 python3 manage.py migrate
 python3 manage.py createsuperuser
 ```
@@ -138,10 +139,22 @@ Add more variables if you adapt the settings (ALLOWED_HOSTS, email settings, SEN
 
 ## Running tests
 
-Run Django tests with the standard management command:
+Run tests using Django's test runner (this will discover TestCase-based tests):
 
 ```bash
-python manage.py test
+# Run all tests (Django TestRunner)
+python3 manage.py test
+
+or
+
+pytest
+
+or
+
+pytest -q
+
+# Run tests for only the an app
+python3 manage.py test modules.<appname>
 ```
 
 If you add test-specific dependencies, update `requirements.txt` accordingly.
