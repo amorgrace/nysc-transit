@@ -97,7 +97,13 @@ ASGI_APPLICATION = "engine.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {"default": dj_database_url.config(default=str(config("DATABASE_URL")))}
+DATABASE_URL = str(config("DATABASE_URL", default="sqlite:///db.sqlite3"))
+
+DATABASES = {
+    "default": dj_database_url.config(default=DATABASE_URL)
+}
+
+
 
 
 # Password validation
