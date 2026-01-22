@@ -12,7 +12,7 @@ repos:
   # Ruff: auto-fix lint issues
   # -------------------------
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.14.13 
+    rev: v0.14.13
     hooks:
       - id: ruff-check
         name: Ruff check + fix
@@ -59,7 +59,7 @@ repos:
         language: system
         pass_filenames: false
         args: [
-          "--maxfail=1", 
+          "--maxfail=1",
           "--disable-warnings",
           "--ds=engine.settings",
           "modules"  # run tests in your apps folder

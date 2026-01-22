@@ -42,10 +42,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "ninja",
     "corsheaders",
-    "authenticator",
-    "vendor",
-    "corper",
-    "bookings",
+    "modules.authenticator",
+    "modules.vendor",
+    "modules.corper",
+    "modules.bookings",
     "ninja_jwt.token_blacklist",
 ]
 
