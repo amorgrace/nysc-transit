@@ -153,7 +153,7 @@ or
 
 pytest -q
 
-# Run tests for only the an app
+# Run tests for only a single app
 python3 manage.py test modules.<appname>
 ```
 
