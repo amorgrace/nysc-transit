@@ -121,3 +121,7 @@ class LogoutSchema(Schema):
 class VerifyOTPSchema(BaseModel):
     email: EmailStr
     otp: str
+
+
+class ResendOTPSchema(Schema):
+    email: EmailStr

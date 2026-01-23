@@ -15,6 +15,7 @@ from .schema import (
     CorperSignupSchema,
     LoginSchema,
     LogoutSchema,
+    ResendOTPSchema,
     VendorSignupSchema,
     VerifyOTPSchema,
 )
@@ -248,8 +249,8 @@ def logout(request, data: LogoutSchema):
         raise HttpError(400, f"Logout failed: {str(e)}")
 
 
-@router.post("/verify-otp", auth=None)  # or use JWT if you want to tie to user
-def verify_otp_endpoint(request, data: VerifyOTPSchema):  # e.g. email + otp
+@router.post("/verify-otp", auth=None)
+def verify_otp_endpoint(request, data: VerifyOTPSchema):
     try:
         user = User.objects.get(email=data.email)
     except User.DoesNotExist:
@@ -262,3 +263,20 @@ def verify_otp_endpoint(request, data: VerifyOTPSchema):  # e.g. email + otp
         return {"message": message, "success": True}
     else:
         raise HttpError(400, message)
+
+
+@router.post("/resend-otp", auth=None)
+def resend_otp_endpoint(request, data: ResendOTPSchema):
+    try:
+        user = User.objects.get(email=data.email)
+    except User.DoesNotExist:
+        raise HttpError(404, "User not found")
+
+    if user.is_active:
+        raise HttpError(400, "User already verified")
+
+    otp = generate_otp()
+    store_otp_for_user(user, otp)
+    send_or_log_otp_email(request, otp, user.email)
+
+    return {"success": True, "message": "OTP resent successfully", "otp": otp}
