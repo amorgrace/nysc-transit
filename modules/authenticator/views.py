@@ -1,7 +1,7 @@
 from typing import cast
 
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from ninja import Router
 from ninja.errors import HttpError
@@ -214,15 +214,16 @@ def login(request, data: LoginSchema):
     """
     Login user and return JWT tokens
     """
-    user = authenticate(request, email=data.email, password=data.password)
-
-    if user is None:
+    try:
+        user = User.objects.get(email=data.email)
+        if not user.check_password(data.password):
+            raise HttpError(401, "Invalid email or password")
+        if not user.is_active:
+            raise HttpError(403, "Account is inactive. Please contact support.")
+    except User.DoesNotExist:
         raise HttpError(401, "Invalid email or password")
 
     user = cast(CustomUser, user)
-
-    if not user.is_active:
-        raise HttpError(403, "Account is inactive. Please contact support.")
 
     refresh = RefreshToken.for_user(user)
 
@@ -348,7 +349,7 @@ def forgot_password(request, data: ForgotPasswordSchema):
     token = generate_password_reset_token(user.id)
 
     # Send token via email
-    reset_link = f"https://your-frontend.com/reset-password?token={token}"
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     send_or_log_otp_email(
         request, user.email, f"Click this link to reset your password: {reset_link}"
     )

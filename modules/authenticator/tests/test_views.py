@@ -2,13 +2,16 @@ from datetime import date
 
 import pytest
 from django.test import override_settings
+from ninja.errors import HttpError
 
 from modules.authenticator.schema import (
     CorperSignupSchema,
+    LoginSchema,
     VendorSignupSchema,
     VerifyOTPSchema,
 )
 from modules.authenticator.views import (
+    login,
     register_corper,
     register_vendor,
     verify_otp_endpoint,
@@ -87,3 +90,79 @@ def test_register_vendor(USER, monkeypatch):
     assert resp["user"]["email"] == "vendor@example.com"
     assert resp["user"]["role"] == "vendor"
     assert "dev_otp" in resp
+
+
+# test for login
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_login_success(USER):
+    USER.objects.create_user(
+        email="testuser@example.com",
+        password="Password1!",
+        is_active=True,
+    )
+
+    data = LoginSchema(
+        email="testuser@example.com",
+        password="Password1!",
+    )
+
+    resp = login(object(), data)
+    assert resp["message"] == "Login successful"
+    assert resp["user"]["email"] == "testuser@example.com"
+    assert "tokens" in resp
+    assert "access" in resp["tokens"]
+    assert "refresh" in resp["tokens"]
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_login_invalid_credentials(USER):
+    USER.objects.create_user(
+        email="testuser@example.com",
+        password="Password1!",
+        is_active=True,
+    )
+
+    data = LoginSchema(
+        email="testuser@example.com",
+        password="WrongPassword!",
+    )
+
+    with pytest.raises(HttpError) as exc_info:
+        login(object(), data)
+    assert exc_info.value.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_login_inactive_user(USER):
+    USER.objects.create_user(
+        email="testuser@example.com",
+        password="Password1!",
+        is_active=False,
+    )
+
+    data = LoginSchema(
+        email="testuser@example.com",
+        password="Password1!",
+    )
+
+    with pytest.raises(HttpError) as exc_info:
+        login(object(), data)
+    assert exc_info.value.status_code == 403
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_login_user_not_found(USER):
+    data = LoginSchema(
+        email="nonexistent@example.com",
+        password="Password1!",
+    )
+
+    with pytest.raises(HttpError) as exc_info:
+        login(object(), data)
+    assert exc_info.value.status_code == 401

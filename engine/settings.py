@@ -34,7 +34,7 @@ ALLOWED_HOSTS = config(
 )
 
 AUTH_USER_MODEL = "authenticator.User"
-
+FRONTEND_URL = config("FRONTEND_URL")
 # Application definition
 
 INSTALLED_APPS = [
