@@ -3,7 +3,12 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from modules.authenticator.schema import CorperSignupSchema, VendorSignupSchema
+from modules.authenticator.schema import (
+    CorperSignupSchema,
+    ResendOTPSchema,
+    ResetPasswordSchema,
+    VendorSignupSchema,
+)
 
 
 @pytest.mark.parametrize(
@@ -178,3 +183,21 @@ def test_vendor_password_mismatch():
             years_in_operation=5,
             description="A vendor",
         )
+
+
+def test_resend_otp_schema_valid():
+    data = {"email": "user@example.com"}
+    schema = ResendOTPSchema(**data)
+    assert schema.email == "user@example.com"
+
+
+def test_resend_otp_schema_invalid_email():
+    data = {"email": "not-an-email"}
+    with pytest.raises(ValidationError):
+        ResendOTPSchema(**data)
+
+
+def test_reset_password_schema_missing_field():
+    data = {"token": "abc", "new_password": "123"}
+    with pytest.raises(ValidationError):
+        ResetPasswordSchema(**data)

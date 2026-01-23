@@ -1,8 +1,13 @@
 import re
 from datetime import date
+from typing import Optional
+from uuid import UUID
 
 from ninja import Schema
 from pydantic import BaseModel, EmailStr, field_validator
+
+from modules.corper.schemas import CorperProfileOut
+from modules.vendor.schemas import VendorProfileOut
 
 
 class CorperSignupSchema(Schema):
@@ -109,6 +114,18 @@ class VendorSignupSchema(Schema):
         return v
 
 
+class UserOutSchema(Schema):
+    id: UUID
+    email: str
+    full_name: str
+    role: str
+    phone: Optional[str] = None
+    is_active: bool
+    email_verified: bool
+    corper_profile: Optional[CorperProfileOut] = None
+    vendor_profile: Optional[VendorProfileOut] = None
+
+
 class LoginSchema(Schema):
     email: EmailStr
     password: str
@@ -125,3 +142,13 @@ class VerifyOTPSchema(BaseModel):
 
 class ResendOTPSchema(Schema):
     email: EmailStr
+
+
+class ForgotPasswordSchema(Schema):
+    email: str
+
+
+class ResetPasswordSchema(Schema):
+    token: str
+    new_password: str
+    confirm_password: str

@@ -2,6 +2,7 @@ from typing import cast
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.hashers import make_password
 from ninja import Router
 from ninja.errors import HttpError
 from ninja_jwt.exceptions import TokenError
@@ -9,13 +10,19 @@ from ninja_jwt.tokens import RefreshToken
 
 from modules.authenticator.models import User as CustomUser
 from modules.corper.models import CorperProfile
+from modules.corper.schemas import CorperProfileOut
 from modules.vendor.models import VendorProfile
+from modules.vendor.schemas import VendorProfileOut
 
+from .permissions import JWTAuth
 from .schema import (
     CorperSignupSchema,
+    ForgotPasswordSchema,
     LoginSchema,
     LogoutSchema,
     ResendOTPSchema,
+    ResetPasswordSchema,
+    UserOutSchema,
     VendorSignupSchema,
     VerifyOTPSchema,
 )
@@ -25,10 +32,12 @@ from .utils.email import (
     store_otp_for_user,
     verify_otp,
 )
+from .utils.token import generate_password_reset_token, verify_password_reset_token
 
 router = Router(tags=["Auth"])
 
 User = get_user_model()
+jwt_auth = JWTAuth()
 
 
 @router.post("/corper/register", auth=None)
@@ -280,3 +289,92 @@ def resend_otp_endpoint(request, data: ResendOTPSchema):
     send_or_log_otp_email(request, otp, user.email)
 
     return {"success": True, "message": "OTP resent successfully", "otp": otp}
+
+
+@router.get("/user/me", response=UserOutSchema, auth=jwt_auth)
+def get_current_user(request):
+    user = request.auth  # with JWTAuth, `request.auth` is the user
+    if not user:
+        raise HttpError(401, "Authentication required")
+
+    corper_profile = None
+    vendor_profile = None
+
+    if user.role == "corper":
+        corper = getattr(user, "corper_profile", None)
+        if corper:
+            corper_profile = CorperProfileOut(
+                phone=corper.phone,
+                state_code=corper.state_code,
+                call_up_number=corper.call_up_number,
+                deployment_state=corper.deployment_state,
+                camp_location=corper.camp_location,
+                deployment_date=corper.deployment_date,
+            )
+    elif user.role == "vendor":
+        vendor = getattr(user, "vendor_profile", None)
+        if vendor:
+            vendor_profile = VendorProfileOut(
+                business_name=vendor.business_name,
+                business_registration_number=vendor.business_registration_number,
+                years_in_operation=vendor.years_in_operation,
+                description=vendor.description,
+            )
+
+    return UserOutSchema(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        phone=user.phone,
+        is_active=user.is_active,
+        email_verified=user.email_verified,
+        corper_profile=corper_profile,
+        vendor_profile=vendor_profile,
+    )
+
+
+@router.post("/forgot-password", auth=None)
+def forgot_password(request, data: ForgotPasswordSchema):
+    try:
+        user = User.objects.get(email=data.email)
+    except User.DoesNotExist:
+        # Always return success to avoid email enumeration
+        return {
+            "success": True,
+            "message": "If your email exists, a reset link has been sent",
+        }
+
+    token = generate_password_reset_token(user.id)
+
+    # Send token via email
+    reset_link = f"https://your-frontend.com/reset-password?token={token}"
+    send_or_log_otp_email(
+        request, user.email, f"Click this link to reset your password: {reset_link}"
+    )
+
+    return {
+        "success": True,
+        "token": token,
+        "message": "If your email exists, a reset link has been sent",
+    }
+
+
+@router.post("/reset-password", auth=None)
+def reset_password(request, data: ResetPasswordSchema):
+    if data.new_password != data.confirm_password:
+        raise HttpError(400, "Passwords do not match")
+
+    user_id, error = verify_password_reset_token(data.token)
+    if error:
+        raise HttpError(400, error)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise HttpError(404, "User not found")
+
+    user.password = make_password(data.new_password)
+    user.save(update_fields=["password"])
+
+    return {"success": True, "message": "Password reset successfully"}
