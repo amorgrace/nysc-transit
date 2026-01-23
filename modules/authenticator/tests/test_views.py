@@ -3,15 +3,18 @@ from datetime import date
 import pytest
 from django.test import override_settings
 from ninja.errors import HttpError
+from ninja_jwt.tokens import RefreshToken
 
 from modules.authenticator.schema import (
     CorperSignupSchema,
     LoginSchema,
+    LogoutSchema,
     VendorSignupSchema,
     VerifyOTPSchema,
 )
 from modules.authenticator.views import (
     login,
+    logout,
     register_corper,
     register_vendor,
     verify_otp_endpoint,
@@ -166,3 +169,33 @@ def test_login_user_not_found(USER):
     with pytest.raises(HttpError) as exc_info:
         login(object(), data)
     assert exc_info.value.status_code == 401
+
+
+# test for logout
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_logout_success(USER):
+    user = USER.objects.create_user(
+        email="testuser@example.com",
+        password="Password1!",
+        is_active=True,
+    )
+
+    refresh = RefreshToken.for_user(user)
+
+    data = LogoutSchema(refresh=str(refresh))
+
+    resp = logout(object(), data)
+    assert resp["message"] == "Logged out successfully"
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_logout_invalid_token(USER):
+    data = LogoutSchema(refresh="invalid_token_string")
+
+    with pytest.raises(HttpError) as exc_info:
+        logout(object(), data)
+    assert exc_info.value.status_code == 400
