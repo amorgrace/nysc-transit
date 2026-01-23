@@ -5,7 +5,7 @@ from ninja.errors import HttpError
 
 
 def corper_required(func):
-    @wraps(func)  # ← this line is the key
+    @wraps(func)
     def wrapper(request, *args, **kwargs):
         if not hasattr(request, "user") or not request.user.is_authenticated:
             raise HttpError(401, "Authentication required")

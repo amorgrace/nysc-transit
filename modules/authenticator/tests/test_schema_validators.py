@@ -1,8 +1,9 @@
 from datetime import date
 
 import pytest
-from modules.authenticator.schema import CorperSignupSchema, VendorSignupSchema
 from pydantic import ValidationError
+
+from modules.authenticator.schema import CorperSignupSchema, VendorSignupSchema
 
 
 @pytest.mark.parametrize(

@@ -1,13 +1,12 @@
 import re
 from datetime import date
-from typing import Optional
 
 from ninja import Schema
 from pydantic import BaseModel, EmailStr, field_validator
 
 
 class CorperSignupSchema(Schema):
-    username: Optional[str] = None
+    # username: Optional[str] = None
     email: EmailStr
     password: str
     confirm_password: str
@@ -53,7 +52,7 @@ class CorperSignupSchema(Schema):
 
 
 class VendorSignupSchema(Schema):
-    username: Optional[str] = None
+    # username: Optional[str] = None
     email: EmailStr
     password: str
     confirm_password: str

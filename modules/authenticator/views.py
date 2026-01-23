@@ -51,7 +51,7 @@ def register_corper(request, data: CorperSignupSchema):
                 role=User.Role.CORPER,  # type: ignore
                 is_active=False,  # ← you can keep True or set False until verified
                 phone=data.phone,
-                username=data.username or data.email,
+                # username=data.username or data.email,
             ),
         )
 
@@ -80,6 +80,7 @@ def register_corper(request, data: CorperSignupSchema):
                 "email": user.email,
                 "full_name": user.full_name,
                 "role": user.role,
+                "email_verified": user.email_verified,
             },
             "corper_profile": {
                 # ... your fields ...
@@ -140,7 +141,7 @@ def register_vendor(request, data: VendorSignupSchema):
                 role=User.Role.VENDOR,  # type: ignore
                 is_active=False,  # ← key change
                 email_verified=False,
-                username=data.username or data.email,
+                # username=data.username or data.email,
             ),
         )
 
@@ -171,6 +172,7 @@ def register_vendor(request, data: VendorSignupSchema):
                 "full_name": user.full_name,
                 "role": user.role,
                 "phone": user.phone,
+                "email_verified": user.email_verified,
             },
             "vendor_profile": {
                 "business_name": data.business_name,
@@ -219,10 +221,11 @@ def login(request, data: LoginSchema):
         "user": {
             "email": user.email,
             "role": user.role,
+            "email_verified": user.email_verified,
         },
         "tokens": {
             "refresh": str(refresh),
-            "access": str(refresh.access_token),  # type: ignore
+            "access": str(refresh.access_token),
         },
     }
 

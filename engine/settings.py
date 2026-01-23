@@ -99,11 +99,7 @@ ASGI_APPLICATION = "engine.asgi.application"
 
 DATABASE_URL = str(config("DATABASE_URL", default="sqlite:///db.sqlite3"))
 
-DATABASES = {
-    "default": dj_database_url.config(default=DATABASE_URL)
-}
-
-
+DATABASES = {"default": dj_database_url.config(default=DATABASE_URL)}
 
 
 # Password validation
