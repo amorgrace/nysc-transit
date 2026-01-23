@@ -1,11 +1,13 @@
 import re
 from datetime import date
+from typing import Optional
 
 from ninja import Schema
 from pydantic import BaseModel, EmailStr, field_validator
 
 
 class CorperSignupSchema(Schema):
+    username: Optional[str] = None
     email: EmailStr
     password: str
     confirm_password: str
@@ -26,6 +28,8 @@ class CorperSignupSchema(Schema):
             raise ValueError("Password must start with a capital letter")
         if not re.search(r"[!@#$%^&*()_\-+=\[\]{};:'\",.<>/?\\|`~]", v):
             raise ValueError("Password must contain at least one special character")
+        if not any(char.isdigit() for char in v):
+            raise ValueError("Password must contain at least one digit")
         return v
 
     @field_validator("confirm_password")
@@ -38,6 +42,7 @@ class CorperSignupSchema(Schema):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v):
+        v = v.strip()
         if not v.isdigit():
             raise ValueError("Phone must contain digits only")
         if len(v) != 11:
@@ -48,6 +53,7 @@ class CorperSignupSchema(Schema):
 
 
 class VendorSignupSchema(Schema):
+    username: Optional[str] = None
     email: EmailStr
     password: str
     confirm_password: str
@@ -66,6 +72,8 @@ class VendorSignupSchema(Schema):
             raise ValueError("Password must start with a capital letter")
         if not re.search(r"[!@#$%^&*()_\-+=\[\]{};:'\",.<>/?\\|`~]", v):
             raise ValueError("Password must contain at least one special character")
+        if not any(char.isdigit() for char in v):
+            raise ValueError("Password must contain at least one digit")
         return v
 
     @field_validator("confirm_password")
@@ -78,6 +86,7 @@ class VendorSignupSchema(Schema):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v):
+        v = v.strip()
         if not v.isdigit():
             raise ValueError("Phone must contain digits only")
         if len(v) != 11:

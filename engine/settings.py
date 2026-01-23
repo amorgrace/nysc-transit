@@ -27,7 +27,11 @@ SECRET_KEY = config("SECRET_KEY")
 SECRET_KEY_FALLBACKS = []
 DEBUG = config("DEBUG", default=True, cast=bool)
 # ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS",
+    default="localhost,127.0.0.1",
+    cast=Csv(),
+)
 
 AUTH_USER_MODEL = "authenticator.User"
 
@@ -93,7 +97,13 @@ ASGI_APPLICATION = "engine.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {"default": dj_database_url.config(default=str(config("DATABASE_URL")))}
+DATABASE_URL = str(config("DATABASE_URL", default="sqlite:///db.sqlite3"))
+
+DATABASES = {
+    "default": dj_database_url.config(default=DATABASE_URL)
+}
+
+
 
 
 # Password validation
