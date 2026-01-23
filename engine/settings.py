@@ -34,7 +34,8 @@ ALLOWED_HOSTS = config(
 )
 
 AUTH_USER_MODEL = "authenticator.User"
-FRONTEND_URL = config("FRONTEND_URL")
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3000")
+
 # Application definition
 
 INSTALLED_APPS = [
