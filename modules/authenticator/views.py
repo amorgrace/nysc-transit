@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from ninja import Router
 from ninja.errors import HttpError
+from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
@@ -14,7 +15,6 @@ from modules.corper.schemas import CorperProfileOut
 from modules.vendor.models import VendorProfile
 from modules.vendor.schemas import VendorProfileOut
 
-from .permissions import JWTAuth
 from .schema import (
     CorperSignupSchema,
     ForgotPasswordSchema,
@@ -294,7 +294,7 @@ def resend_otp_endpoint(request, data: ResendOTPSchema):
 
 @router.get("/user/me", response=UserOutSchema, auth=jwt_auth)
 def get_current_user(request):
-    user = request.auth  # with JWTAuth, `request.auth` is the user
+    user = request.auth
     if not user:
         raise HttpError(401, "Authentication required")
 
