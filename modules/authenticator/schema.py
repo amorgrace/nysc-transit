@@ -145,7 +145,7 @@ class ResendOTPSchema(Schema):
 
 
 class ForgotPasswordSchema(Schema):
-    email: str
+    email: EmailStr
 
 
 class ResetPasswordSchema(Schema):
