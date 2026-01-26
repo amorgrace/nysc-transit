@@ -1,11 +1,14 @@
 # permissions.py
 from functools import wraps
 
+from django.contrib.auth import get_user_model
 from ninja.errors import HttpError
+
+User = get_user_model()
 
 
 def corper_required(func):
-    @wraps(func)  # ← this line is the key
+    @wraps(func)
     def wrapper(request, *args, **kwargs):
         if not hasattr(request, "user") or not request.user.is_authenticated:
             raise HttpError(401, "Authentication required")

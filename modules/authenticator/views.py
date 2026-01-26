@@ -1,20 +1,28 @@
 from typing import cast
 
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from ninja import Router
 from ninja.errors import HttpError
+from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from modules.authenticator.models import User as CustomUser
 from modules.corper.models import CorperProfile
+from modules.corper.schemas import CorperProfileOut
 from modules.vendor.models import VendorProfile
+from modules.vendor.schemas import VendorProfileOut
 
 from .schema import (
     CorperSignupSchema,
+    ForgotPasswordSchema,
     LoginSchema,
     LogoutSchema,
+    ResendOTPSchema,
+    ResetPasswordSchema,
+    UserOutSchema,
     VendorSignupSchema,
     VerifyOTPSchema,
 )
@@ -24,10 +32,12 @@ from .utils.email import (
     store_otp_for_user,
     verify_otp,
 )
+from .utils.token import generate_password_reset_token, verify_password_reset_token
 
 router = Router(tags=["Auth"])
 
 User = get_user_model()
+jwt_auth = JWTAuth()
 
 
 @router.post("/corper/register", auth=None)
@@ -51,7 +61,7 @@ def register_corper(request, data: CorperSignupSchema):
                 role=User.Role.CORPER,  # type: ignore
                 is_active=False,  # ← you can keep True or set False until verified
                 phone=data.phone,
-                username=data.username or data.email,
+                # username=data.username or data.email,
             ),
         )
 
@@ -80,6 +90,7 @@ def register_corper(request, data: CorperSignupSchema):
                 "email": user.email,
                 "full_name": user.full_name,
                 "role": user.role,
+                "email_verified": user.email_verified,
             },
             "corper_profile": {
                 # ... your fields ...
@@ -140,7 +151,7 @@ def register_vendor(request, data: VendorSignupSchema):
                 role=User.Role.VENDOR,  # type: ignore
                 is_active=False,  # ← key change
                 email_verified=False,
-                username=data.username or data.email,
+                # username=data.username or data.email,
             ),
         )
 
@@ -171,6 +182,7 @@ def register_vendor(request, data: VendorSignupSchema):
                 "full_name": user.full_name,
                 "role": user.role,
                 "phone": user.phone,
+                "email_verified": user.email_verified,
             },
             "vendor_profile": {
                 "business_name": data.business_name,
@@ -202,15 +214,16 @@ def login(request, data: LoginSchema):
     """
     Login user and return JWT tokens
     """
-    user = authenticate(request, email=data.email, password=data.password)
-
-    if user is None:
+    try:
+        user = User.objects.get(email=data.email)
+        if not user.check_password(data.password):
+            raise HttpError(401, "Invalid email or password")
+        if not user.is_active:
+            raise HttpError(403, "Account is inactive. Please contact support.")
+    except User.DoesNotExist:
         raise HttpError(401, "Invalid email or password")
 
     user = cast(CustomUser, user)
-
-    if not user.is_active:
-        raise HttpError(403, "Account is inactive. Please contact support.")
 
     refresh = RefreshToken.for_user(user)
 
@@ -219,10 +232,11 @@ def login(request, data: LoginSchema):
         "user": {
             "email": user.email,
             "role": user.role,
+            "email_verified": user.email_verified,
         },
         "tokens": {
             "refresh": str(refresh),
-            "access": str(refresh.access_token),  # type: ignore
+            "access": str(refresh.access_token),
         },
     }
 
@@ -245,8 +259,8 @@ def logout(request, data: LogoutSchema):
         raise HttpError(400, f"Logout failed: {str(e)}")
 
 
-@router.post("/verify-otp", auth=None)  # or use JWT if you want to tie to user
-def verify_otp_endpoint(request, data: VerifyOTPSchema):  # e.g. email + otp
+@router.post("/verify-otp", auth=None)
+def verify_otp_endpoint(request, data: VerifyOTPSchema):
     try:
         user = User.objects.get(email=data.email)
     except User.DoesNotExist:
@@ -259,3 +273,109 @@ def verify_otp_endpoint(request, data: VerifyOTPSchema):  # e.g. email + otp
         return {"message": message, "success": True}
     else:
         raise HttpError(400, message)
+
+
+@router.post("/resend-otp", auth=None)
+def resend_otp_endpoint(request, data: ResendOTPSchema):
+    try:
+        user = User.objects.get(email=data.email)
+    except User.DoesNotExist:
+        raise HttpError(404, "User not found")
+
+    if user.is_active:
+        raise HttpError(400, "User already verified")
+
+    otp = generate_otp()
+    store_otp_for_user(user, otp)
+    send_or_log_otp_email(request, otp, user.email)
+
+    return {"success": True, "message": "OTP resent successfully", "otp": otp}
+
+
+@router.get("/user/me", response=UserOutSchema, auth=jwt_auth)
+def get_current_user(request):
+    user = request.auth
+    if not user:
+        raise HttpError(401, "Authentication required")
+
+    corper_profile = None
+    vendor_profile = None
+
+    if user.role == "corper":
+        corper = getattr(user, "corper_profile", None)
+        if corper:
+            corper_profile = CorperProfileOut(
+                phone=corper.phone,
+                state_code=corper.state_code,
+                call_up_number=corper.call_up_number,
+                deployment_state=corper.deployment_state,
+                camp_location=corper.camp_location,
+                deployment_date=corper.deployment_date,
+            )
+    elif user.role == "vendor":
+        vendor = getattr(user, "vendor_profile", None)
+        if vendor:
+            vendor_profile = VendorProfileOut(
+                business_name=vendor.business_name,
+                business_registration_number=vendor.business_registration_number,
+                years_in_operation=vendor.years_in_operation,
+                description=vendor.description,
+            )
+
+    return UserOutSchema(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        phone=user.phone,
+        is_active=user.is_active,
+        email_verified=user.email_verified,
+        corper_profile=corper_profile,
+        vendor_profile=vendor_profile,
+    )
+
+
+@router.post("/forgot-password", auth=None)
+def forgot_password(request, data: ForgotPasswordSchema):
+    try:
+        user = User.objects.get(email=data.email)
+    except User.DoesNotExist:
+        # Always return success to avoid email enumeration
+        return {
+            "success": True,
+            "message": "If your email exists, a reset link has been sent",
+        }
+
+    token = generate_password_reset_token(user.id)
+
+    # Send token via email
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    send_or_log_otp_email(
+        request, user.email, f"Click this link to reset your password: {reset_link}"
+    )
+
+    return {
+        "success": True,
+        "token": token,
+        "message": "If your email exists, a reset link has been sent",
+    }
+
+
+@router.post("/reset-password", auth=None)
+def reset_password(request, data: ResetPasswordSchema):
+    if data.new_password != data.confirm_password:
+        raise HttpError(400, "Passwords do not match")
+
+    user_id, error = verify_password_reset_token(data.token)
+    if error:
+        raise HttpError(400, error)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise HttpError(404, "User not found")
+
+    user.password = make_password(data.new_password)
+    user.save(update_fields=["password"])
+
+    return {"success": True, "message": "Password reset successfully"}
