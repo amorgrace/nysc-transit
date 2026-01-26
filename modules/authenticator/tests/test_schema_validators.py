@@ -123,14 +123,12 @@ def test_valid_vendor_fields(phone, password):
         business_name="Test Biz",
         business_registration_number="BRN123",
         years_in_operation=5,
-        description="A vendor",
     )
 
     assert vendor.phone == "08012345678"
     assert vendor.business_name == "Test Biz"
     assert vendor.business_registration_number == "BRN123"
     assert vendor.years_in_operation == 5
-    assert vendor.description == "A vendor"
 
 
 @pytest.mark.parametrize(
@@ -148,7 +146,6 @@ def test_invalid_vendor_phone(phone):
             business_name="Test Biz",
             business_registration_number="BRN123",
             years_in_operation=5,
-            description="A vendor",
         )
 
 
@@ -164,7 +161,6 @@ def test_invalid_vendor_password(password):
             business_name="Test Biz",
             business_registration_number="BRN123",
             years_in_operation=5,
-            description="A vendor",
         )
 
 
@@ -181,7 +177,6 @@ def test_vendor_password_mismatch():
             business_name="Test Biz",
             business_registration_number="BRN123",
             years_in_operation=5,
-            description="A vendor",
         )
 
 

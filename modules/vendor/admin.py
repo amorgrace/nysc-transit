@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Trip, Vehicle, VendorProfile
+from .models import Trip, Vehicle
+from .models import Vendor as VendorProfile
 
 
 @admin.register(VendorProfile)

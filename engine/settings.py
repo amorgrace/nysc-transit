@@ -139,3 +139,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# timezone aware
+USE_TZ = True
+TIME_ZONE = "UTC"

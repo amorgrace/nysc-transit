@@ -65,7 +65,6 @@ class VendorSignupSchema(Schema):
     business_name: str
     business_registration_number: str
     years_in_operation: int
-    description: str
 
     @field_validator("password")
     @classmethod

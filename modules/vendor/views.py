@@ -9,7 +9,8 @@ from ninja_jwt.authentication import JWTAuth
 
 from modules.authenticator.permissions import vendor_required
 
-from .models import Trip, Vehicle, VendorProfile
+from .models import Trip, Vehicle
+from .models import Vendor as VendorProfile
 from .schemas import (
     TripIn,
     TripOut,
@@ -139,7 +140,6 @@ def get_vendor_profile(request):
         "business_name": profile.business_name,
         "business_registration_number": profile.business_registration_number,
         "years_in_operation": profile.years_in_operation,
-        "description": profile.description,
     }
 
 
@@ -153,7 +153,6 @@ def update_vendor_profile(request, payload: VendorProfileIn):
 
     update_data = payload.dict(exclude_unset=True)
 
-    # Example: you might allow changing description freely, but limit others
     for attr, value in update_data.items():
         setattr(profile, attr, value)
 

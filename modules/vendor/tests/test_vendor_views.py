@@ -4,6 +4,7 @@ import pytest
 from django.test import override_settings
 from ninja.errors import HttpError
 
+from modules.vendor.models import Vendor as VendorProfile
 from modules.vendor.schemas import TripIn, VehicleIn, VendorProfileIn
 from modules.vendor.views import (
     create_trip,
@@ -424,15 +425,12 @@ def test_get_vendor_profile_success(USER):
         full_name="Test Vendor",
     )
 
-    from modules.vendor.models import VendorProfile
-
     VendorProfile.objects.create(
         user=user,
         phone="08012345678",
         business_name="Acme Ltd",
         business_registration_number="BRN12345",
         years_in_operation=5,
-        description="We sell things",
     )
 
     class MockRequest:
@@ -480,15 +478,12 @@ def test_update_vendor_profile_success(USER):
         full_name="Test Vendor",
     )
 
-    from modules.vendor.models import VendorProfile
-
     profile = VendorProfile.objects.create(
         user=user,
         phone="08012345678",
         business_name="Acme Ltd",
         business_registration_number="BRN12345",
         years_in_operation=5,
-        description="We sell things",
     )
 
     class MockRequest:
@@ -498,16 +493,13 @@ def test_update_vendor_profile_success(USER):
     request.user = user
 
     data = VendorProfileIn(
-        description="We sell amazing things",
         years_in_operation=7,
     )
 
     resp = update_vendor_profile(request, data)
-    assert resp.description == "We sell amazing things"
     assert resp.years_in_operation == 7
 
     profile.refresh_from_db()
-    assert profile.description == "We sell amazing things"
 
 
 @pytest.mark.django_db
@@ -527,7 +519,7 @@ def test_update_vendor_profile_not_found(USER):
     request = MockRequest()
     request.user = user
 
-    data = VendorProfileIn(description="Updated description")
+    data = VendorProfileIn()
 
     with pytest.raises(HttpError) as exc_info:
         update_vendor_profile(request, data)
