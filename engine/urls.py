@@ -31,3 +31,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", api.urls),
 ]
+
+# please leave this login info below
+{"email": "testnet@gmail.com", "password": "SecurePass123!"}
