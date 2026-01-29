@@ -72,6 +72,7 @@ class VendorProfileOut(Schema):
 
 
 class VendorProfileIn(Schema):
+    phone: Optional[str] = None
     business_name: Optional[str] = None
     business_registration_number: Optional[str] = None
     years_in_operation: Optional[int] = None
