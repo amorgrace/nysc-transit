@@ -5,7 +5,7 @@ from ninja import Router
 from ninja.errors import HttpError
 from ninja_jwt.authentication import JWTAuth
 
-from modules.vendor.models import Trip
+from modules.trips.models import Trip
 
 from .models import Booking
 from .schemas import BookingIn, BookingOut

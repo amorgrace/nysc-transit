@@ -1,10 +1,11 @@
 # bookings/models.py
 import uuid
+from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
 
-from modules.vendor.models import Trip, Vehicle
+from modules.trips.models import Trip, Vehicle
 
 
 class Booking(models.Model):
@@ -44,6 +45,10 @@ class Booking(models.Model):
         null=True, blank=True, help_text="Assigned seat number if applicable"
     )
 
+    selected_seats = models.PositiveSmallIntegerField(
+        default=1, help_text="Number of seats selected"
+    )
+
     booking_status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default="pending"
     )
@@ -63,6 +68,7 @@ class Booking(models.Model):
     notes = models.TextField(blank=True)
 
     class Meta:
+        db_table = "bookings"
         ordering = ["-booked_at"]
         indexes = [
             models.Index(fields=["user", "trip"]),
@@ -81,6 +87,29 @@ class Booking(models.Model):
         return f"{self.user.full_name} → {self.trip} ({self.booking_status})"
 
     def save(self, *args, **kwargs):
-        if self.amount_paid == 0 and self.trip:
-            self.amount_paid = self.trip.price_per_seat
+        if self.trip and (self.amount_paid is None or self.amount_paid == 0):
+            self.amount_paid = self.total_price
         super().save(*args, **kwargs)
+
+    @property
+    def total_price(self):
+        """
+        Calculate total price after early bird and group discounts.
+        """
+        if not self.trip:
+            return Decimal(0)
+
+        base_amount = self.selected_seats * self.trip.price_per_seat
+        discount = Decimal(0)
+
+        if (
+            self.trip.early_bird_discount_percentage > 0
+            and not self.trip.early_bird_deadline_expired
+        ):
+            discount += base_amount * self.trip.early_bird_discount_rate
+
+        if self.selected_seats > 1 and self.trip.group_discount_percentage > 0:
+            discount += base_amount * self.trip.group_discount_rate
+
+        total = base_amount - discount
+        return max(total, Decimal(0))

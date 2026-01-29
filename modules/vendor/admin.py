@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from .models import Trip, Vehicle
 from .models import Vendor as VendorProfile
 
 
@@ -18,7 +17,3 @@ class VendorProfileAdmin(admin.ModelAdmin):
         return obj.user.email
 
     get_email.short_description = "Email"
-
-
-admin.site.register(Trip)
-admin.site.register(Vehicle)
