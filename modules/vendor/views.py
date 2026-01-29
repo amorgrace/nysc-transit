@@ -4,13 +4,14 @@ from ninja_jwt.authentication import JWTAuth
 
 from modules.authenticator.permissions import vendor_required
 from modules.trips.views.trips_views import router as trips_router
+from modules.trips.views.vehicles_views import router as vehicles_router
 
 from .models import Vendor as VendorProfile
 from .schemas import VendorProfileIn, VendorProfileOut
 
 router = Router(auth=JWTAuth(), tags=["Vendor"])
 router.add_router("/trips", trips_router)
-router.add_router("/vehicles", trips_router)
+router.add_router("/vehicles", vehicles_router)
 
 
 @router.get("/profile", response=dict)

@@ -9,7 +9,7 @@ from ..schemas import VehicleIn, VehicleOut
 router = Router(tags=["Vehicles"], auth=JWTAuth())
 
 
-@router.post("/vehicles", response=VehicleOut)
+@router.post("/", response=VehicleOut)
 def create_vehicle(request, payload: VehicleIn):
     # payload should now match the model fields
     # Resolve `vehicle_type` from the schema into a VehicleType model instance.
@@ -41,6 +41,6 @@ def create_vehicle(request, payload: VehicleIn):
     return vehicle
 
 
-@router.get("/vehicles", response=List[VehicleOut])
+@router.get("/", response=List[VehicleOut])
 def list_my_vehicles(request):
     return Vehicle.objects.filter(vendor=request.user)

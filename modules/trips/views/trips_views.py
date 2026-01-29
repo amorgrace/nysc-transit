@@ -13,7 +13,7 @@ from ..schemas import TripIn, TripOut
 router = Router(tags=["Trips"], auth=JWTAuth())
 
 
-@router.post("/trips", response=TripOut)
+@router.post("/", response=TripOut)
 def create_trip(request, payload: TripIn):
     """
     Create a new trip for the authenticated vendor
@@ -48,7 +48,7 @@ def create_trip(request, payload: TripIn):
     return trip
 
 
-@router.get("/trips", response=list[TripOut])
+@router.get("/", response=list[TripOut])
 def list_my_trips(request):
     """
     List all trips created by the authenticated vendor
@@ -57,7 +57,7 @@ def list_my_trips(request):
     return trips
 
 
-@router.get("/trips/{trip_id}", response=TripOut)
+@router.get("/{trip_id}", response=TripOut)
 def get_trip(request, trip_id: UUID):
     trip = get_object_or_404(Trip, id=trip_id, vendor=request.user)
     return trip
