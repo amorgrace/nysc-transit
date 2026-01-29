@@ -12,7 +12,7 @@ from ninja_jwt.tokens import RefreshToken
 from modules.authenticator.models import User as CustomUser
 from modules.corper.models import CorperProfile
 from modules.corper.schemas import CorperProfileOut
-from modules.vendor.models import VendorProfile
+from modules.vendor.models import Vendor as VendorProfile
 from modules.vendor.schemas import VendorProfileOut
 
 from .schema import (
@@ -158,10 +158,10 @@ def register_vendor(request, data: VendorSignupSchema):
         # 4. Create VendorProfile
         VendorProfile.objects.create(
             user=user,
+            phone=data.phone,
             business_name=data.business_name,
             business_registration_number=data.business_registration_number or "",
             years_in_operation=data.years_in_operation,
-            description=data.description or "",
         )
 
         # 5. Generate & store OTP
@@ -188,7 +188,6 @@ def register_vendor(request, data: VendorSignupSchema):
                 "business_name": data.business_name,
                 "business_registration_number": data.business_registration_number,
                 "years_in_operation": data.years_in_operation,
-                "description": data.description,
             },
             "tokens": {
                 "refresh": str(refresh),
@@ -316,10 +315,14 @@ def get_current_user(request):
         vendor = getattr(user, "vendor_profile", None)
         if vendor:
             vendor_profile = VendorProfileOut(
+                phone=vendor.phone,
                 business_name=vendor.business_name,
                 business_registration_number=vendor.business_registration_number,
                 years_in_operation=vendor.years_in_operation,
-                description=vendor.description,
+                logo_url=vendor.logo_url,
+                verification_status=vendor.verification_status,
+                rejection_reason=vendor.rejection_reason,
+                rating_average=vendor.rating_average,
             )
 
     return UserOutSchema(

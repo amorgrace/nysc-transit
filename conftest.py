@@ -10,10 +10,12 @@ def apply_migrations(django_db_blocker):
     """Ensure migrations are applied once for the entire test session."""
     with django_db_blocker.unblock():
         try:
-            call_command("makemigrations", "authenticator", "--noinput")
+            call_command("makemigrations", "--noinput")
         except SystemExit:
             pass
         call_command("migrate", "--noinput")
+
+        call_command("flush", "--noinput")
 
 
 @pytest.fixture(scope="session")

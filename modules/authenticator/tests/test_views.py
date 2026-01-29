@@ -83,7 +83,6 @@ def test_register_vendor(USER, monkeypatch):
         business_name="Acme Ltd",
         business_registration_number="BRN12345",
         years_in_operation=5,
-        description="We sell things",
     )
 
     orig_create = USER.objects.create_user
@@ -358,14 +357,13 @@ def test_get_current_user_vendor(USER):
         full_name="Test Vendor",
     )
 
-    from modules.vendor.models import VendorProfile
+    from modules.vendor.models import Vendor as VendorProfile
 
     VendorProfile.objects.create(
         user=user,
         business_name="Acme Ltd",
         business_registration_number="BRN12345",
         years_in_operation=5,
-        description="We sell things",
     )
 
     class MockRequest:
