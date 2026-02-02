@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from ninja.errors import ValidationError
 
 
 class Vendor(models.Model):
@@ -44,6 +45,28 @@ class Vendor(models.Model):
     class Meta:
         db_table = "vendors"
 
-    @property
-    def is_verified(self):
-        return self.verification_status == self.VERIFICATION_APPROVED
+    def _update_verification_status(self):
+        if self.verification_status in {
+            self.VERIFICATION_APPROVED,
+            self.VERIFICATION_REJECTED,
+        }:
+            return
+
+        if self.business_name and self.business_registration_number:
+            self.verification_status = self.VERIFICATION_UNDER_REVIEW
+        else:
+            self.verification_status = self.VERIFICATION_PENDING
+
+    def clean(self):
+        if (
+            self.verification_status == self.VERIFICATION_REJECTED
+            and not self.rejection_reason
+        ):
+            raise ValidationError(
+                [{"rejection_reason": "Rejection reason is required."}]
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        self._update_verification_status()
+        super().save(*args, **kwargs)

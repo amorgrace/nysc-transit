@@ -96,6 +96,10 @@ class Vehicle(models.Model):
             return False
         return self.roadworthiness_expiry_date >= timezone.now().date()
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class Trip(models.Model):
     STATUS_CHOICES = (
@@ -209,17 +213,18 @@ class Trip(models.Model):
     def available_seats_remaining(self):
         if self.vehicle:
             return self.vehicle.capacity - self.total_seats_booked
-        return None
+        return 0
 
     def clean(self):
         if self.price_per_seat < 0:
             raise ValidationError({"price_per_seat": "Price cannot be negative."})
 
-        if (
-            self.vehicle
-            and self.available_seats_remaining is not None
-            and self.available_seats_remaining < 0
-        ):
+        remaining = self.available_seats_remaining
+        if self.vehicle and remaining < 0:
             raise ValidationError(
                 {"available_seats": "Selected seats exceed vehicle capacity."}
             )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

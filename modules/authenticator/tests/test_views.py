@@ -364,6 +364,7 @@ def test_get_current_user_vendor(USER):
         business_name="Acme Ltd",
         business_registration_number="BRN12345",
         years_in_operation=5,
+        phone="0802374448487",
     )
 
     class MockRequest:
