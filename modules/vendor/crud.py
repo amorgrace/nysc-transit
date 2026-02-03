@@ -1,8 +1,12 @@
+import logging
+
 from django.db import IntegrityError
 from ninja.errors import HttpError
 
 from .models import Vendor
 from .schemas import VendorProfileIn
+
+logger = logging.getLogger(__name__)
 
 
 class VendorCRUD:
@@ -21,7 +25,8 @@ class VendorCRUD:
         """Find a vendor by id"""
         try:
             return self.queryset.get(id=vendor_id)
-        except Vendor.DoesNotExist:
+        except Vendor.DoesNotExist as exc:
+            logger.exception(f"Vendor profile not found: {exc}")
             raise HttpError(404, "Vendor profile not found")
 
     def get_all_vendors(self):
@@ -44,7 +49,8 @@ class VendorCRUD:
             )
             return vendor_data
         except IntegrityError as exc:
-            raise HttpError(400, f"Could not create vendor: {exc}")
+            logger.exception(f"Could not create vendor: {exc}")
+            raise HttpError(400, "Could not create vendor")
 
     def update_fields(self, data, vendor_id):
         """Update vendor profile"""

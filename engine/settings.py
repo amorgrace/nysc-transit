@@ -17,6 +17,10 @@ from pathlib import Path
 import dj_database_url
 from decouple import Csv, config
 
+from .logger import LOGGING
+
+_ = LOGGING
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR / "modules"))
