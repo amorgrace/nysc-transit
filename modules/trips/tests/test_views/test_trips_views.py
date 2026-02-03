@@ -176,6 +176,7 @@ def test_list_my_trips(USER):
     Trip.objects.create(
         vendor=user,
         vehicle=vehicle,
+        departure_state="Lagos",
         departure_city="Ajah",
         destination_camp="Abuja Camp",
         departure_date=date.today() + timedelta(days=1),
@@ -187,6 +188,7 @@ def test_list_my_trips(USER):
     Trip.objects.create(
         vendor=user,
         vehicle=vehicle,
+        departure_state="Abuja",
         departure_city="Abuja",
         destination_camp="Lagos Camp",
         departure_date=date.today() + timedelta(days=2),
@@ -231,6 +233,7 @@ def test_get_trip_success(USER):
         vendor=user,
         vehicle=vehicle,
         departure_state="Lagos",
+        departure_city="Ajah",
         destination_camp="Abuja",
         departure_date=date.today() + timedelta(days=1),
         departure_time=time(8, 0),

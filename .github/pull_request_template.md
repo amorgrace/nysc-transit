@@ -3,6 +3,7 @@ Please include a summary of the changes and the related issue.
 Fixes # (issue)
 
 ## Type of change
+- [ ] Refactor (no functional behavior change)
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
