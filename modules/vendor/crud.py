@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class VendorCRUD:
     def __init__(self, queryset=None):
         self.model = Vendor
-        self.queryset = queryset or self.model.objects.all()
+        self.queryset = queryset or self.model.objects.filter(is_active=True)
 
     def verify_vendor(self, vendor_id):
         """Mark a vendor as verified"""
@@ -68,6 +68,8 @@ class VendorCRUD:
         return vendor
 
     def delete_vendor(self, vendor_id):
+        """Soft delete a vendor by setting is_active=False"""
         vendor = self.get_vendor_by_id(vendor_id=vendor_id)
-        vendor.delete()
+        vendor.is_active = False
+        vendor.save(update_fields=["is_active"])
         return vendor

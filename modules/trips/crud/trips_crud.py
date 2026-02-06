@@ -56,3 +56,35 @@ class TripCRUD:
         except IntegrityError as exc:
             logger.exception(f"Could not create trip: {exc}")
             raise HttpError(400, "Could not create trip")
+
+    def get_trip_by_status(self, status):
+        """Get trip by status"""
+        return self.queryset.filter(status=status)
+
+    def update_trip(self, data: TripIn, trip_id):
+        """Update Trip"""
+        try:
+            trip = self.get_trip_by_id(trip_id=trip_id)
+            for field, value in data.dict(exclude_unset=True).items():
+                setattr(trip, field, value)
+            trip.save()
+            return trip
+        except IntegrityError as exc:
+            logger.exception(f"Could not update trip: {exc}")
+            raise HttpError(400, "Could not update trip")
+        except Exception as exc:
+            logger.exception(f"Unexpected error while updating trip: {exc}")
+            raise HttpError(400, "Could not update trip")
+
+    def delete_trip(self, trip_id):
+        """Delete trip"""
+        try:
+            trip = self.get_trip_by_id(trip_id=trip_id)
+            trip.delete()
+            return True
+        except Trip.DoesNotExist as exc:
+            logger.exception(f"Trip does not exist: {exc}")
+            raise HttpError(404, "Trip does not exist")
+        except Exception as exc:
+            logger.exception(f"Could not delete trip: {exc}")
+            raise HttpError(400, "Could not delete trip")

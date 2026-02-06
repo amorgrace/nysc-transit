@@ -333,3 +333,113 @@ def test_search_trips_with_filters(USER):
     )
     assert len(resp) == 1
     assert resp[0].departure_state == "Lagos"
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_update_and_delete_trip_views(USER):
+    user = USER.objects.create_user(
+        email="vendor2@example.com",
+        password="Password1!",
+        is_active=True,
+        role="vendor",
+        full_name="Test Vendor",
+    )
+
+    vt = VehicleType.objects.create(name="minibus")
+    vehicle = Vehicle.objects.create(
+        vendor=user,
+        registration_number="UPD123",
+        vehicle_type=vt,
+        make_model="Toyota",
+        capacity=16,
+    )
+
+    trip = Trip.objects.create(
+        vendor=user,
+        vehicle=vehicle,
+        departure_state="Lagos",
+        departure_city="Ikeja",
+        destination_camp="Abuja",
+        departure_date=date.today(),
+        departure_time=time(9, 0),
+        price_per_seat=3000,
+        available_seats=8,
+    )
+
+    class MockRequest:
+        pass
+
+    request = MockRequest()
+    request.user = user
+
+    # update trip via view
+    payload = TripIn(
+        vehicle_id=vehicle.id,
+        departure_city="UpdatedCity",
+        departure_state="Lagos",
+        destination_camp="Abuja",
+        departure_date=date.today(),
+        departure_time=time(9, 0),
+        estimated_arrival_time=time(12, 0),
+        price_per_seat=3000,
+        available_seats=8,
+    )
+
+    updated = __import__(  # call view function directly
+        "modules.trips.views.trips_views", fromlist=["update_trip"]
+    ).update_trip(request, trip.id, payload)
+    assert updated.departure_city == "UpdatedCity"
+
+    # delete via view
+    deleted = __import__(
+        "modules.trips.views.trips_views", fromlist=["delete_trip"]
+    ).delete_trip(request, trip.id)
+    assert deleted is True or deleted is None
+    with pytest.raises(Trip.DoesNotExist):
+        Trip.objects.get(id=trip.id)
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_search_trips_by_status_view(USER):
+    user = USER.objects.create_user(
+        email="vendor3@example.com",
+        password="Password1!",
+        is_active=True,
+        role="vendor",
+        full_name="Test Vendor",
+    )
+
+    vt = VehicleType.objects.create(name="bus")
+    vehicle = Vehicle.objects.create(
+        vendor=user,
+        registration_number="STAT123",
+        vehicle_type=vt,
+        make_model="Model",
+        capacity=20,
+    )
+
+    Trip.objects.create(
+        vendor=user,
+        vehicle=vehicle,
+        departure_state="Lagos",
+        departure_city="Ikeja",
+        destination_camp="Abuja",
+        departure_date=date.today(),
+        departure_time=time(9, 0),
+        price_per_seat=3000,
+        available_seats=8,
+        status="ongoing",
+    )
+
+    class MockRequest:
+        pass
+
+    request = MockRequest()
+    request.user = user
+
+    resp = __import__(
+        "modules.trips.views.trips_views", fromlist=["search_trips_by_status"]
+    ).search_trips_by_status(request, status="ongoing")
+    assert len(resp) == 1
