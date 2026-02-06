@@ -5,7 +5,12 @@ from django.test import override_settings
 
 from modules.trips.models import Vehicle, VehicleType
 from modules.trips.schemas import VehicleIn
-from modules.trips.views.vehicles_views import create_vehicle, list_my_vehicles
+from modules.trips.views.vehicles_views import (
+    create_vehicle,
+    delete_vehicle,
+    list_my_vehicles,
+    update_vehicle,
+)
 
 
 @pytest.mark.django_db
@@ -85,3 +90,53 @@ def test_list_my_vehicles(USER):
     resp = list_my_vehicles(request)
     assert len(resp) == 2
     assert resp[0].registration_number in ["ABC123", "XYZ789"]
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_update_and_delete_vehicle_view(USER):
+    user = USER.objects.create_user(
+        email="vendor@example.com",
+        password="Password1!",
+        is_active=True,
+        role="vendor",
+        full_name="Test Vendor",
+    )
+
+    class MockRequest:
+        pass
+
+    request = MockRequest()
+    request.user = user
+
+    data = VehicleIn(
+        registration_number="UPDAT01",
+        vehicle_type={"name": "bus"},
+        make_model="Make",
+        color="White",
+        capacity=6,
+        year_manufactured=2018,
+    )
+
+    created = create_vehicle(request, data)
+    assert created.registration_number == "UPDAT01"
+
+    payload = VehicleIn(
+        registration_number="UPDAT01",
+        vehicle_type={"name": "bus"},
+        make_model="Make Updated",
+        color="Red",
+        capacity=8,
+        year_manufactured=2018,
+    )
+
+    updated = update_vehicle(request, created.id, payload)
+    assert updated.make_model == "Make Updated"
+
+    # delete
+    res = delete_vehicle(request, created.id)
+    assert res is True or res is None
+    from modules.trips.models import Vehicle as V
+
+    with pytest.raises(V.DoesNotExist):
+        V.objects.get(id=created.id)

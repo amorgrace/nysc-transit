@@ -18,10 +18,18 @@ _service = VendorService()
 @router.get("/profile", response=dict)
 @vendor_required
 def get_vendor_profile(request):
+    """Get vendor profile"""
     return _service.get_profile_data(request.user)
 
 
 @router.patch("/profile", response=VendorProfileOut)
 @vendor_required
 def update_vendor_profile(request, payload: VendorProfileIn):
+    """Update vendor profile"""
     return _service.update_profile(request.user, payload)
+
+
+@router.delete("/profile", response=dict)
+def delete_vendor_profile(request):
+    """Soft delete vendor profile"""
+    return _service.delete_vendor(request.user)
