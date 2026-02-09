@@ -14,8 +14,8 @@ def apply_migrations(django_db_blocker):
         except SystemExit:
             pass
         call_command("migrate", "--noinput")
-        # Use allow_cascade=True to avoid foreign key truncate issues on PostgreSQL
-        call_command("flush", "--noinput", allow_cascade=True)
+
+        call_command("flush", "--noinput")
 
 
 @pytest.fixture(scope="session")
