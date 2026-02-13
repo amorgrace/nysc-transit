@@ -15,7 +15,7 @@ def apply_migrations(django_db_blocker):
             pass
         call_command("migrate", "--noinput")
 
-        call_command("flush", "--noinput")
+        call_command("flush", "--noinput", allow_cascade=True)
 
 
 @pytest.fixture(scope="session")
