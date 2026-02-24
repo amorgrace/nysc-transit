@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from ninja import Router
@@ -25,10 +26,10 @@ def my_bookings(request):
 
 
 @router.get("/{booking_id}", response=BookingOut)
-def get_booking(request, booking_id: int):
+def get_booking(request, booking_id: uuid.UUID):
     return get_booking_service(request.user, booking_id)
 
 
 @router.patch("/{booking_id}/cancel", response=BookingOut)
-def cancel_booking(request, booking_id: int):
+def cancel_booking(request, booking_id: uuid.UUID):
     return cancel_booking_service(request.user, booking_id)

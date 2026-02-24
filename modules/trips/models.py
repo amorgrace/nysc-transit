@@ -207,7 +207,12 @@ class Trip(models.Model):
             related = getattr(self, "booking_set", None)
         if related is None:
             return 0
-        return related.aggregate(total=models.Sum("selected_seats"))["total"] or 0
+        return (
+            related.filter(booking_status__in=["pending", "confirmed"]).aggregate(
+                total=models.Sum("selected_seats")
+            )["total"]
+            or 0
+        )
 
     @property
     def available_seats_remaining(self):

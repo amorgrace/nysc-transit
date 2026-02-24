@@ -72,7 +72,17 @@ class Booking(models.Model):
         return f"{self.user.full_name} → {self.trip} ({self.booking_status})"
 
     @property
-    def total_price(self):
+    def total_price(self) -> Decimal:
+        """
+        Calculate the total price after applying early bird and group discounts.
+
+        Discounts are applied additively on the base amount:
+        - Early bird discount: applied if the deadline has not expired and percentage > 0.
+        - Group discount: applied if more than 1 seat is selected and percentage > 0.
+
+        Returns:
+            Decimal: The final discounted price, minimum of 0.00.
+        """
         if not self.trip:
             return Decimal(0)
 
@@ -90,7 +100,12 @@ class Booking(models.Model):
 
         return max(base_amount - discount, Decimal(0))
 
-    def save(self, *args, **kwargs):
-        if self.amount_paid == Decimal("0.00"):
-            self.amount_paid = self.total_price
-        super().save(*args, **kwargs)
+    @property
+    def balance_due(self) -> Decimal:
+        """
+        Calculate the remaining balance the user needs to pay.
+
+        Returns:
+            Decimal: The difference between total_price and amount_paid, minimum of 0.00.
+        """
+        return max(self.total_price - self.amount_paid, Decimal(0))

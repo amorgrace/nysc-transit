@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 
 import pytest
+from pydantic import ValidationError
 
 from modules.bookings.schemas import BookingIn, BookingOut
 
@@ -22,12 +23,12 @@ def test_booking_in_default_seats():
 
 
 def test_booking_in_invalid_trip_id():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         BookingIn(trip_id="not-a-uuid", selected_seats=1)
 
 
 def test_booking_in_invalid_seats():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         BookingIn(trip_id=uuid.uuid4(), selected_seats="many")
 
 
@@ -65,7 +66,7 @@ def test_booking_out_total_price_is_decimal():
 
 
 def test_booking_out_missing_required_field():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         BookingOut(
             id=uuid.uuid4(),
             trip_id=uuid.uuid4(),
