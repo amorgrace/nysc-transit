@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 import pytest
 from django.http import Http404
@@ -222,3 +223,41 @@ def test_cancel_completed_booking(corper, trip):
 
     assert exc_info.value.status_code == 400
     assert "Cannot cancel" in str(exc_info.value)
+
+
+# ============================================================================
+# DUE BALANCE
+# ============================================================================
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_balance_due_no_payment(corper, trip):
+    payload = BookingIn(trip_id=trip.id, selected_seats=1)
+    booking = create_booking_service(corper, payload)
+
+    assert booking.balance_due == booking.total_price
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_balance_due_after_partial_payment(corper, trip):
+    payload = BookingIn(trip_id=trip.id, selected_seats=1)
+    booking = create_booking_service(corper, payload)
+
+    booking.amount_paid = Decimal("2000.00")
+    booking.save()
+
+    assert booking.balance_due == booking.total_price - Decimal("2000.00")
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_balance_due_fully_paid(corper, trip):
+    payload = BookingIn(trip_id=trip.id, selected_seats=1)
+    booking = create_booking_service(corper, payload)
+
+    booking.amount_paid = booking.total_price
+    booking.save()
+
+    assert booking.balance_due == Decimal("0.00")

@@ -109,3 +109,6 @@ class Booking(models.Model):
             Decimal: The difference between total_price and amount_paid, minimum of 0.00.
         """
         return max(self.total_price - self.amount_paid, Decimal(0))
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
