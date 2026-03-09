@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "modules.corper",
     "modules.bookings",
     "modules.trips",
+    "modules.payments",
     "ninja_jwt.token_blacklist",
 ]
 

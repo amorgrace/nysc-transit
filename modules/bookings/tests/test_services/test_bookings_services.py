@@ -13,6 +13,7 @@ from modules.bookings.services.booking_service import (
     get_booking_service,
     get_my_bookings_service,
 )
+from modules.payments.models import Payment
 
 # ============================================================================
 # FIXTURES
@@ -236,7 +237,9 @@ def test_balance_due_no_payment(corper, trip):
     payload = BookingIn(trip_id=trip.id, selected_seats=1)
     booking = create_booking_service(corper, payload)
 
-    assert booking.balance_due == booking.total_price
+    assert booking.amount_paid == Decimal("0.00")
+    assert booking.balance_due == Decimal("0.00")
+    assert booking.payment_status == "pending"
 
 
 @pytest.mark.django_db
@@ -245,10 +248,17 @@ def test_balance_due_after_partial_payment(corper, trip):
     payload = BookingIn(trip_id=trip.id, selected_seats=1)
     booking = create_booking_service(corper, payload)
 
-    booking.amount_paid = Decimal("2000.00")
-    booking.save()
+    Payment.objects.create(
+        user=corper,
+        booking=booking,
+        amount=Decimal("2000.00"),
+        status="paid",
+    )
+    booking.refresh_from_db()
 
+    assert booking.amount_paid == Decimal("2000.00")
     assert booking.balance_due == booking.total_price - Decimal("2000.00")
+    assert booking.payment_status == "pending"
 
 
 @pytest.mark.django_db
@@ -257,7 +267,36 @@ def test_balance_due_fully_paid(corper, trip):
     payload = BookingIn(trip_id=trip.id, selected_seats=1)
     booking = create_booking_service(corper, payload)
 
-    booking.amount_paid = booking.total_price
-    booking.save()
+    Payment.objects.create(
+        user=corper,
+        booking=booking,
+        amount=booking.total_price,
+        status="paid",
+    )
+    booking.refresh_from_db()
 
+    assert booking.amount_paid == booking.total_price
     assert booking.balance_due == Decimal("0.00")
+    assert booking.payment_status == "paid"
+
+
+@pytest.mark.django_db
+@override_settings(DEBUG=True)
+def test_balance_due_not_recomputed_on_existing_payment_update(corper, trip):
+    payload = BookingIn(trip_id=trip.id, selected_seats=1)
+    booking = create_booking_service(corper, payload)
+
+    payment = Payment.objects.create(
+        user=corper,
+        booking=booking,
+        amount=Decimal("1000.00"),
+        status="paid",
+    )
+    booking.refresh_from_db()
+    assert booking.amount_paid == Decimal("1000.00")
+
+    payment.amount = Decimal("1500.00")
+    payment.save(update_fields=["amount"])
+    booking.refresh_from_db()
+
+    assert booking.amount_paid == Decimal("1000.00")
