@@ -49,13 +49,13 @@ class Booking(models.Model):
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
 
-    payment_reference = models.CharField(
-        max_length=100, blank=True, null=True, unique=True
-    )
-
     booked_at = models.DateTimeField(auto_now_add=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    balance_due = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
 
     notes = models.TextField(blank=True)
 
@@ -99,16 +99,6 @@ class Booking(models.Model):
             discount += base_amount * self.trip.group_discount_rate
 
         return max(base_amount - discount, Decimal(0))
-
-    @property
-    def balance_due(self) -> Decimal:
-        """
-        Calculate the remaining balance the user needs to pay.
-
-        Returns:
-            Decimal: The difference between total_price and amount_paid, minimum of 0.00.
-        """
-        return max(self.total_price - self.amount_paid, Decimal(0))
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
